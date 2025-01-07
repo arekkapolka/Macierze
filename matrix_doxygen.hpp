@@ -9,206 +9,316 @@
 namespace ak {
 
 /**
- * @brief A base class for matrix operations.
- * 
- * This class represents a generic matrix with basic operations such as scalar 
- * multiplication, matrix addition, subtraction, multiplication, transposition, 
- * and finding minimum and maximum values.
- * 
- * @tparam T The data type of the matrix elements.
+ * @brief Base class for matrix operations
+ *
+ * This template class provides basic matrix operations such as addition, subtraction, multiplication, 
+ * scalar multiplication, transposition, and finding the minimum and maximum elements in a matrix.
+ * The operations ensure correct validation for matrix dimensions.
+ *
+ * @tparam T The type of elements stored in the matrix (e.g., double, int, etc.)
  */
 template <typename T>
 class MatrixBase {
 protected:
-    size_t m_rows; ///< The number of rows in the matrix.
-    size_t m_cols; ///< The number of columns in the matrix.
-    std::vector<std::vector<T>> m_data; ///< The matrix data.
+    size_t m_rows; ///< Number of rows in the matrix
+    size_t m_cols; ///< Number of columns in the matrix
+    std::vector<std::vector<T>> m_data; ///< The matrix data
 
 public:
     /**
-     * @brief Constructs a matrix with specified dimensions.
+     * @brief Constructor to initialize a matrix with given dimensions.
      * 
-     * Initializes a matrix with the given number of rows and columns.
-     * Throws an exception if the dimensions are invalid (zero or negative).
+     * @param rows The number of rows in the matrix
+     * @param cols The number of columns in the matrix
      * 
-     * @param rows The number of rows in the matrix.
-     * @param cols The number of columns in the matrix.
-     * @throws std::invalid_argument If either rows or columns are zero or negative.
+     * Throws an exception if the dimensions are zero.
      */
-    MatrixBase(size_t rows, size_t cols);
+    MatrixBase(size_t rows, size_t cols) : m_rows(rows), m_cols(cols), m_data(rows, std::vector<T>(cols)) {
+        if (rows == 0 || cols == 0) {
+            throw std::invalid_argument("Matrix dimensions must be greater than zero");
+        }
+    }
 
     /**
-     * @brief Access an element of the matrix.
+     * @brief Accessor to get the element at a specific position.
      * 
-     * Provides access to an element at the specified row and column index.
+     * @param row The row index
+     * @param col The column index
      * 
-     * @param row The row index of the element.
-     * @param col The column index of the element.
-     * @return Reference to the matrix element.
-     * @throws std::out_of_range If the row or column index is out of range.
+     * @return The reference to the matrix element at the specified position
+     * 
+     * Throws an exception if the indices are out of range.
      */
-    T& at(size_t row, size_t col);
+    T& at(size_t row, size_t col) {
+        if (row >= m_rows || col >= m_cols) {
+            throw std::out_of_range("Matrix indices out of range");
+        }
+        return m_data[row][col];
+    }
 
     /**
-     * @brief Access an element of the matrix (constant version).
+     * @brief Const accessor to get the element at a specific position.
      * 
-     * Provides access to an element at the specified row and column index.
+     * @param row The row index
+     * @param col The column index
      * 
-     * @param row The row index of the element.
-     * @param col The column index of the element.
-     * @return Constant reference to the matrix element.
-     * @throws std::out_of_range If the row or column index is out of range.
+     * @return The constant reference to the matrix element at the specified position
+     * 
+     * Throws an exception if the indices are out of range.
      */
-    const T& at(size_t row, size_t col) const;
+    const T& at(size_t row, size_t col) const {
+        if (row >= m_rows || col >= m_cols) {
+            throw std::out_of_range("Matrix indices out of range");
+        }
+        return m_data[row][col];
+    }
 
     /**
      * @brief Get the number of rows in the matrix.
      * 
-     * @return The number of rows in the matrix.
+     * @return The number of rows
      */
-    size_t getRows() const;
+    size_t getRows() const { return m_rows; }
 
     /**
      * @brief Get the number of columns in the matrix.
      * 
-     * @return The number of columns in the matrix.
+     * @return The number of columns
      */
-    size_t getCols() const;
+    size_t getCols() const { return m_cols; }
 
     /**
      * @brief Scalar multiplication of the matrix.
      * 
-     * Multiplies each element of the matrix by the given scalar.
-     * 
-     * @param scalar The scalar value to multiply by.
-     * @return Reference to the current matrix after multiplication.
+     * @param scalar The scalar to multiply each element of the matrix by
+     * @return A reference to the current matrix after scalar multiplication
      */
-    MatrixBase& operator*=(T scalar);
+    MatrixBase& operator*=(T scalar) {
+        for (auto& row : m_data) {
+            for (auto& element : row) {
+                element *= scalar;
+            }
+        }
+        return *this;
+    }
 
     /**
      * @brief Matrix addition.
      * 
-     * Adds another matrix to the current matrix. The dimensions of both matrices 
-     * must match.
+     * @param other The matrix to add
+     * @return A reference to the current matrix after addition
      * 
-     * @param other The matrix to add.
-     * @return Reference to the current matrix after addition.
-     * @throws std::invalid_argument If the dimensions of the matrices do not match.
+     * Throws an exception if the matrices do not have the same dimensions.
      */
-    MatrixBase& operator+=(const MatrixBase& other);
+    MatrixBase& operator+=(const MatrixBase& other) {
+        if (this->m_rows != other.m_rows || this->m_cols != other.m_cols) {
+            throw std::invalid_argument("Matrices dimensions must match for addition");
+        }
+
+        for (size_t i = 0; i < this->m_rows; ++i) {
+            for (size_t j = 0; j < this->m_cols; ++j) {
+                this->m_data[i][j] += other.m_data[i][j];
+            }
+        }
+        return *this;
+    }
 
     /**
      * @brief Matrix subtraction.
      * 
-     * Subtracts another matrix from the current matrix. The dimensions of both matrices 
-     * must match.
+     * @param other The matrix to subtract
+     * @return A reference to the current matrix after subtraction
      * 
-     * @param other The matrix to subtract.
-     * @return Reference to the current matrix after subtraction.
-     * @throws std::invalid_argument If the dimensions of the matrices do not match.
+     * Throws an exception if the matrices do not have the same dimensions.
      */
-    MatrixBase& operator-=(const MatrixBase& other);
+    MatrixBase& operator-=(const MatrixBase& other) {
+        if (this->m_rows != other.m_rows || this->m_cols != other.m_cols) {
+            throw std::invalid_argument("Matrices dimensions must match for subtraction");
+        }
+
+        for (size_t i = 0; i < this->m_rows; ++i) {
+            for (size_t j = 0; j < this->m_cols; ++j) {
+                this->m_data[i][j] -= other.m_data[i][j];
+            }
+        }
+        return *this;
+    }
 
     /**
      * @brief Matrix multiplication.
      * 
-     * Multiplies the current matrix by another matrix. The number of columns in 
-     * the first matrix must match the number of rows in the second matrix.
+     * @param other The matrix to multiply with
+     * @return A new matrix resulting from the multiplication
      * 
-     * @param other The matrix to multiply by.
-     * @return A new matrix containing the result of the multiplication.
-     * @throws std::invalid_argument If the matrices' dimensions do not match for multiplication.
+     * Throws an exception if the number of columns of the first matrix does not match the number of rows of the second.
      */
-    MatrixBase operator*(const MatrixBase& other) const;
+    MatrixBase operator*(const MatrixBase& other) const {
+        if (this->m_cols != other.m_rows) {
+            throw std::invalid_argument("Invalid dimensions for matrix multiplication");
+        }
+
+        MatrixBase result(this->m_rows, other.m_cols);
+        for (size_t i = 0; i < this->m_rows; ++i) {
+            for (size_t j = 0; j < other.m_cols; ++j) {
+                result.m_data[i][j] = 0;
+                for (size_t k = 0; k < this->m_cols; ++k) {
+                    result.m_data[i][j] += this->m_data[i][k] * other.m_data[k][j];
+                }
+            }
+        }
+        return result;
+    }
 
     /**
      * @brief Transpose the matrix.
      * 
-     * Transposes the current matrix in-place.
+     * This function swaps the rows and columns of the matrix.
      */
-    void transpose();
+    void transpose() {
+        for (size_t i = 0; i < this->m_rows; ++i) {
+            for (size_t j = i + 1; j < this->m_cols; ++j) {
+                std::swap(this->m_data[i][j], this->m_data[j][i]);
+            }
+        }
+    }
 
     /**
      * @brief Find the minimum value in the matrix.
      * 
-     * Returns the smallest element in the matrix.
+     * @return The minimum value in the matrix
      * 
-     * @return The minimum value in the matrix.
-     * @throws std::invalid_argument If the matrix is empty.
+     * Throws an exception if the matrix is empty.
      */
-    T min() const;
+    T min() const {
+        if (this->m_rows == 0 || this->m_cols == 0) {
+            throw std::invalid_argument("Cannot find min of an empty matrix");
+        }
+        T minValue = m_data[0][0];
+        for (size_t i = 0; i < m_rows; ++i) {
+            for (size_t j = 0; j < m_cols; ++j) {
+                if (m_data[i][j] < minValue) {
+                    minValue = m_data[i][j];
+                }
+            }
+        }
+        return minValue;
+    }
 
     /**
      * @brief Find the maximum value in the matrix.
      * 
-     * Returns the largest element in the matrix.
+     * @return The maximum value in the matrix
      * 
-     * @return The maximum value in the matrix.
-     * @throws std::invalid_argument If the matrix is empty.
+     * Throws an exception if the matrix is empty.
      */
-    T max() const;
+    T max() const {
+        if (this->m_rows == 0 || this->m_cols == 0) {
+            throw std::invalid_argument("Cannot find max of an empty matrix");
+        }
+        T maxValue = m_data[0][0];
+        for (size_t i = 0; i < m_rows; ++i) {
+            for (size_t j = 0; j < m_cols; ++j) {
+                if (m_data[i][j] > maxValue) {
+                    maxValue = m_data[i][j];
+                }
+            }
+        }
+        return maxValue;
+    }
 
     /**
-     * @brief Virtual destructor.
+     * @brief Destructor
+     * 
+     * Virtual destructor to ensure proper cleanup for derived classes.
      */
     virtual ~MatrixBase() = default;
 };
 
 /**
- * @brief A derived class for square matrices.
- * 
- * This class represents a square matrix and provides additional functionality 
- * such as calculating the determinant of the matrix.
- * 
- * @tparam T The data type of the matrix elements.
+ * @brief Derived class for square matrices
+ *
+ * This class provides additional functionality for square matrices, such as the calculation of determinants.
+ *
+ * @tparam T The type of elements stored in the square matrix (e.g., double, int, etc.)
  */
 template <typename T>
 class SquareMatrix : public MatrixBase<T> {
 public:
     /**
-     * @brief Constructs a square matrix with the given size.
+     * @brief Constructor to initialize a square matrix with the given size.
      * 
-     * Initializes a square matrix of the specified size. Throws an exception if 
-     * the size is zero.
+     * @param size The size of the square matrix
      * 
-     * @param size The size of the square matrix.
-     * @throws std::invalid_argument If the size is zero.
+     * Throws an exception if the size is zero.
      */
-    SquareMatrix(size_t size);
+    SquareMatrix(size_t size) : MatrixBase<T>(size, size) {
+        if (size == 0) {
+            throw std::invalid_argument("Matrix size must be greater than zero");
+        }
+    }
 
     /**
      * @brief Calculate the determinant of the square matrix.
      * 
-     * Recursively calculates the determinant of the matrix using cofactor expansion.
+     * This function uses a recursive method to compute the determinant for square matrices.
      * 
-     * @return The determinant of the matrix.
+     * @return The determinant of the matrix
      */
-    T determinant() const;
+    T determinant() const {
+        if (this->m_rows == 1) {
+            return this->m_data[0][0];
+        }
+
+        T det = 0;
+        for (size_t col = 0; col < this->m_cols; ++col) {
+            SquareMatrix subMatrix = this->getSubMatrix(0, col);
+            det += (col % 2 == 0 ? 1 : -1) * this->m_data[0][col] * subMatrix.determinant();
+        }
+        return det;
+    }
 
 private:
     /**
-     * @brief Get a submatrix by excluding a specific row and column.
+     * @brief Helper function to get a submatrix by excluding a specific row and column.
      * 
-     * Generates a submatrix by excluding the given row and column.
+     * @param excludeRow The row to exclude
+     * @param excludeCol The column to exclude
      * 
-     * @param excludeRow The row to exclude.
-     * @param excludeCol The column to exclude.
-     * @return A new submatrix.
+     * @return A new square matrix that is the submatrix excluding the specified row and column
      */
-    SquareMatrix getSubMatrix(size_t excludeRow, size_t excludeCol) const;
+    SquareMatrix getSubMatrix(size_t excludeRow, size_t excludeCol) const {
+        SquareMatrix subMatrix(this->m_rows - 1);
+        size_t subRow = 0;
+        for (size_t i = 0; i < this->m_rows; ++i) {
+            if (i == excludeRow) continue;
+            size_t subCol = 0;
+            for (size_t j = 0; j < this->m_cols; ++j) {
+                if (j == excludeCol) continue;
+                subMatrix.at(subRow, subCol++) = this->m_data[i][j];
+            }
+            ++subRow;
+        }
+        return subMatrix;
+    }
 };
 
 /**
- * @brief Overload of the stream insertion operator for matrix output.
+ * @brief Overload the output stream operator to print MatrixBase objects.
  * 
- * Outputs the matrix elements to the provided output stream.
- * 
- * @param os The output stream.
- * @param matrix The matrix to output.
- * @return The output stream after inserting the matrix.
+ * @param os The output stream
+ * @param matrix The matrix object to print
+ * @return The output stream with the matrix data
  */
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const MatrixBase<T>& matrix);
+std::ostream& operator<<(std::ostream& os, const MatrixBase<T>& matrix) {
+    for (size_t i = 0; i < matrix.getRows(); ++i) {
+        for (size_t j = 0; j < matrix.getCols(); ++j) {
+            os << matrix.at(i, j) << " ";
+        }
+        os << "\n";
+    }
+    return os;
+}
 
 } // namespace ak
 
